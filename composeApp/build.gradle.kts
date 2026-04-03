@@ -24,7 +24,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
-            linkerOpts("-framework", "CoreML")
+            linkerOpts("-framework", "CoreML", "-lsqlite3")
         }
         iosTarget.compilations.getByName("main") {
             cinterops {
