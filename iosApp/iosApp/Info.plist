@@ -4,5 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Fresco uses the camera to capture photos of fruits and vegetables for classification.</string>
 </dict>
 </plist>

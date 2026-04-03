@@ -1,8 +1,17 @@
 package io.jadu.fresco.di
 
+import io.jadu.fresco.platform.camera.CameraController
+import io.jadu.fresco.platform.camera.CameraPermission
+import io.jadu.fresco.platform.camera.IosCameraController
+import io.jadu.fresco.platform.camera.IosCameraPermission
+import io.jadu.fresco.platform.camera.IosSystemNavigator
+import io.jadu.fresco.platform.camera.SystemNavigator
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
 actual val platformModule: Module = module {
-    // Platform-specific bindings (camera, classifier, storage) added per phase
+    single { IosCameraController() }
+    single<CameraController> { get<IosCameraController>() }
+    single<CameraPermission> { IosCameraPermission() }
+    single<SystemNavigator> { IosSystemNavigator() }
 }
