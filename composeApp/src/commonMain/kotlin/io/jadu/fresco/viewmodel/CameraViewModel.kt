@@ -3,6 +3,7 @@ package io.jadu.fresco.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.jadu.fresco.domain.camera.CaptureImageUseCase
+import io.jadu.fresco.domain.preprocessing.PreprocessImageUseCase
 import io.jadu.fresco.platform.camera.CameraPermission
 import io.jadu.fresco.platform.camera.PermissionStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +13,8 @@ import kotlinx.coroutines.launch
 
 class CameraViewModel(
     private val cameraPermission: CameraPermission,
-    private val captureImageUseCase: CaptureImageUseCase
+    private val captureImageUseCase: CaptureImageUseCase,
+    private val preprocessImageUseCase: PreprocessImageUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CameraUiState>(determineInitialState())
@@ -53,10 +55,18 @@ class CameraViewModel(
     }
 
     private suspend fun captureImage() {
-        _uiState.value = runCatching { captureImageUseCase() }
+        // Capture while Preview composable is still mounted (camera bound)
+        val image = runCatching { captureImageUseCase() }
+            .getOrElse {
+                _uiState.value = CameraUiState.Error(it.message ?: "Capture failed")
+                return
+            }
+        // Now safe to leave Preview — camera can be released
+        _uiState.value = CameraUiState.Processing
+        _uiState.value = runCatching { preprocessImageUseCase(image) }
             .fold(
-                onSuccess = { CameraUiState.Captured(it) },
-                onFailure = { CameraUiState.Error(it.message ?: "Capture failed") }
+                onSuccess = { tensor -> CameraUiState.Captured(image, tensor) },
+                onFailure = { CameraUiState.Error(it.message ?: "Processing failed") }
             )
     }
 }

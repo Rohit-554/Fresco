@@ -52,7 +52,10 @@ fun CameraScreen(
             onCapture = viewModel::onCaptureRequested
         )
 
+        is CameraUiState.Processing -> ProcessingPane()
+
         is CameraUiState.Captured -> CapturedPane(
+            tensorShape = state.tensor.shape,
             onRetake = viewModel::onRetry
         )
 
@@ -103,7 +106,7 @@ private fun PreviewPane(onCapture: () -> Unit) {
 }
 
 @Composable
-private fun CapturedPane(onRetake: () -> Unit) {
+private fun ProcessingPane() {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -111,9 +114,36 @@ private fun CapturedPane(onRetake: () -> Unit) {
     ) {
         CircularProgressIndicator()
         Spacer(Modifier.height(16.dp))
-        Text("Identifying...", style = MaterialTheme.typography.bodyLarge)
+        Text("Processing image...", style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun CapturedPane(tensorShape: IntArray, onRetake: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Image Preprocessed",
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Tensor: ${tensorShape.joinToString("×")}",
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Ready for classification (Phase 4)",
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(24.dp))
-        TextButton(onClick = onRetake) { Text("Retake") }
+        Button(onClick = onRetake, modifier = Modifier.fillMaxWidth()) {
+            Text("Retake")
+        }
     }
 }
 
