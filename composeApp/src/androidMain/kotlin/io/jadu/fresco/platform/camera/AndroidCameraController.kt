@@ -51,8 +51,9 @@ class AndroidCameraController(private val context: Context) : CameraController {
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
                     val bytes = extractBytes(image)
+                    val rotation = image.imageInfo.rotationDegrees
                     image.close()
-                    cont.resume(CameraImage(bytes))
+                    cont.resume(CameraImage(bytes, rotation))
                 }
 
                 override fun onError(exception: ImageCaptureException) {

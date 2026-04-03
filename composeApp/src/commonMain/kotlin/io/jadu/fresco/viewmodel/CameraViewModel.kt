@@ -3,6 +3,7 @@ package io.jadu.fresco.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.jadu.fresco.domain.camera.CaptureImageUseCase
+import io.jadu.fresco.domain.classification.InterpretResultUseCase
 import io.jadu.fresco.domain.ml.ClassifyImageUseCase
 import io.jadu.fresco.domain.preprocessing.PreprocessImageUseCase
 import io.jadu.fresco.platform.camera.CameraPermission
@@ -16,7 +17,8 @@ class CameraViewModel(
     private val cameraPermission: CameraPermission,
     private val captureImageUseCase: CaptureImageUseCase,
     private val preprocessImageUseCase: PreprocessImageUseCase,
-    private val classifyImageUseCase: ClassifyImageUseCase
+    private val classifyImageUseCase: ClassifyImageUseCase,
+    private val interpretResultUseCase: InterpretResultUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CameraUiState>(determineInitialState())
@@ -74,10 +76,14 @@ class CameraViewModel(
 
         // Run ML inference
         _uiState.value = CameraUiState.Classifying
-        _uiState.value = runCatching { classifyImageUseCase(tensor) }
-            .fold(
-                onSuccess = { output -> CameraUiState.Classified(image, output) },
-                onFailure = { CameraUiState.Error(it.message ?: "Classification failed") }
-            )
+        val output = runCatching { classifyImageUseCase(tensor) }
+            .getOrElse {
+                _uiState.value = CameraUiState.Error(it.message ?: "Classification failed")
+                return
+            }
+
+        // Interpret results: top-K with labels and confidence
+        val results = interpretResultUseCase(output)
+        _uiState.value = CameraUiState.Classified(image, results)
     }
 }

@@ -1,7 +1,7 @@
 package io.jadu.fresco.viewmodel
 
+import io.jadu.fresco.domain.classification.ClassificationResult
 import io.jadu.fresco.platform.camera.CameraImage
-import io.jadu.fresco.platform.ml.ClassificationOutput
 
 sealed interface CameraUiState {
     data object PermissionPrimer : CameraUiState
@@ -12,7 +12,7 @@ sealed interface CameraUiState {
     data object Classifying : CameraUiState
     data class Classified(
         val image: CameraImage,
-        val output: ClassificationOutput
+        val results: List<ClassificationResult>
     ) : CameraUiState
     data class Error(val message: String) : CameraUiState
 }

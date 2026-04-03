@@ -2,26 +2,48 @@ package io.jadu.fresco.platform.preprocessing
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import io.jadu.fresco.platform.camera.CameraImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.core.graphics.scale
 
 /**
- * Android implementation: decodes JPEG via [BitmapFactory], resizes to 224×224,
- * extracts RGB pixels, and normalizes with ImageNet mean/std into NCHW layout.
+ * Android implementation: decodes JPEG, applies rotation, resizes shorter side to 256,
+ * center-crops to 224×224, and normalizes with ImageNet mean/std into NCHW layout.
+ *
+ * This matches the torchvision EfficientNet-B0 preprocessing:
+ * Resize(256) → CenterCrop(224) → ToTensor → Normalize(mean, std)
  */
 class AndroidImagePreprocessor : ImagePreprocessor {
 
     override suspend fun preprocess(image: CameraImage): ImageTensor = withContext(Dispatchers.IO) {
-        val original = BitmapFactory.decodeByteArray(image.bytes, 0, image.bytes.size)
+        var bitmap = BitmapFactory.decodeByteArray(image.bytes, 0, image.bytes.size)
             ?: throw IllegalArgumentException("Failed to decode image bytes")
 
-        val resized = original.scale(INPUT_SIZE, INPUT_SIZE)
-        if (resized !== original) original.recycle()
+        // Apply rotation from camera sensor
+        if (image.rotationDegrees != 0) {
+            val matrix = Matrix().apply { postRotate(image.rotationDegrees.toFloat()) }
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated !== bitmap) bitmap.recycle()
+            bitmap = rotated
+        }
 
-        val tensor = extractNormalizedTensor(resized)
-        resized.recycle()
+        // Resize shorter side to RESIZE_SIZE, maintaining aspect ratio
+        val (w, h) = bitmap.width to bitmap.height
+        val scale = RESIZE_SIZE.toFloat() / minOf(w, h)
+        val scaledW = (w * scale).toInt()
+        val scaledH = (h * scale).toInt()
+        val resized = Bitmap.createScaledBitmap(bitmap, scaledW, scaledH, true)
+        if (resized !== bitmap) bitmap.recycle()
+
+        // Center crop to INPUT_SIZE × INPUT_SIZE
+        val cropX = (resized.width - INPUT_SIZE) / 2
+        val cropY = (resized.height - INPUT_SIZE) / 2
+        val cropped = Bitmap.createBitmap(resized, cropX, cropY, INPUT_SIZE, INPUT_SIZE)
+        if (cropped !== resized) resized.recycle()
+
+        val tensor = extractNormalizedTensor(cropped)
+        cropped.recycle()
         tensor
     }
 
@@ -39,9 +61,9 @@ class AndroidImagePreprocessor : ImagePreprocessor {
             val g = ((pixel shr 8) and 0xFF) / 255f
             val b = (pixel and 0xFF) / 255f
 
-            data[i] = (r - MEAN_R) / STD_R                      // R channel
-            data[pixelCount + i] = (g - MEAN_G) / STD_G         // G channel
-            data[2 * pixelCount + i] = (b - MEAN_B) / STD_B     // B channel
+            data[i] = (r - MEAN_R) / STD_R
+            data[pixelCount + i] = (g - MEAN_G) / STD_G
+            data[2 * pixelCount + i] = (b - MEAN_B) / STD_B
         }
 
         return ImageTensor(data, TENSOR_SHAPE)
@@ -49,8 +71,8 @@ class AndroidImagePreprocessor : ImagePreprocessor {
 
     companion object {
         private const val INPUT_SIZE = 224
+        private const val RESIZE_SIZE = 256
 
-        // ImageNet normalization constants
         private const val MEAN_R = 0.485f
         private const val MEAN_G = 0.456f
         private const val MEAN_B = 0.406f
