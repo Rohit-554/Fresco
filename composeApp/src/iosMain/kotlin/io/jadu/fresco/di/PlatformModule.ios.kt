@@ -6,6 +6,8 @@ import io.jadu.fresco.platform.camera.IosCameraController
 import io.jadu.fresco.platform.camera.IosCameraPermission
 import io.jadu.fresco.platform.camera.IosSystemNavigator
 import io.jadu.fresco.platform.camera.SystemNavigator
+import io.jadu.fresco.platform.database.DatabaseDriverFactory
+import io.jadu.fresco.platform.database.IosDatabaseDriverFactory
 import io.jadu.fresco.platform.ml.FruitClassifier
 import io.jadu.fresco.platform.ml.IosFruitClassifier
 import io.jadu.fresco.platform.preprocessing.ImagePreprocessor
@@ -20,4 +22,5 @@ actual val platformModule: Module = module {
     single<SystemNavigator> { IosSystemNavigator() }
     single<ImagePreprocessor> { IosImagePreprocessor() }
     single<FruitClassifier> { IosFruitClassifier() }
+    single<DatabaseDriverFactory> { IosDatabaseDriverFactory() }
 }

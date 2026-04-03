@@ -12,6 +12,6 @@ import org.koin.dsl.module
 val networkModule = module {
     single { createHttpClient() }
     single<FoodApiService> { FoodApiServiceImpl(get()) }
-    single<FoodRepository> { FoodRepositoryImpl(get()) }
+    single<FoodRepository> { FoodRepositoryImpl(get(), get()) }
     factoryOf(::FetchFoodDetailsUseCase)
 }

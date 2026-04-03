@@ -6,6 +6,8 @@ import io.jadu.fresco.platform.camera.AndroidSystemNavigator
 import io.jadu.fresco.platform.camera.CameraController
 import io.jadu.fresco.platform.camera.CameraPermission
 import io.jadu.fresco.platform.camera.SystemNavigator
+import io.jadu.fresco.platform.database.AndroidDatabaseDriverFactory
+import io.jadu.fresco.platform.database.DatabaseDriverFactory
 import io.jadu.fresco.platform.ml.AndroidFruitClassifier
 import io.jadu.fresco.platform.ml.FruitClassifier
 import io.jadu.fresco.platform.preprocessing.AndroidImagePreprocessor
@@ -21,4 +23,5 @@ actual val platformModule: Module = module {
     single<SystemNavigator> { AndroidSystemNavigator(androidContext()) }
     single<ImagePreprocessor> { AndroidImagePreprocessor() }
     single<FruitClassifier> { AndroidFruitClassifier(androidContext()) }
+    single<DatabaseDriverFactory> { AndroidDatabaseDriverFactory(androidContext()) }
 }

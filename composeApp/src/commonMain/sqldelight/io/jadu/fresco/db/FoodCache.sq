@@ -1,0 +1,40 @@
+-- Cached nutrition data keyed by classification label
+CREATE TABLE NutritionCache (
+    label TEXT NOT NULL PRIMARY KEY,
+    productName TEXT NOT NULL,
+    imageUrl TEXT NOT NULL,
+    energyKcal REAL NOT NULL,
+    proteins REAL NOT NULL,
+    carbohydrates REAL NOT NULL,
+    fat REAL NOT NULL,
+    fiber REAL NOT NULL,
+    sugars REAL NOT NULL
+);
+
+-- Cached recipe suggestions keyed by classification label
+CREATE TABLE RecipeCache (
+    id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    name TEXT NOT NULL,
+    thumbnailUrl TEXT NOT NULL,
+    PRIMARY KEY (id, label)
+);
+
+-- Nutrition queries
+selectNutritionByLabel:
+SELECT * FROM NutritionCache WHERE label = ?;
+
+insertNutrition:
+INSERT OR REPLACE INTO NutritionCache(label, productName, imageUrl, energyKcal, proteins, carbohydrates, fat, fiber, sugars)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Recipe queries
+selectRecipesByLabel:
+SELECT * FROM RecipeCache WHERE label = ?;
+
+insertRecipe:
+INSERT OR REPLACE INTO RecipeCache(id, label, name, thumbnailUrl)
+VALUES (?, ?, ?, ?);
+
+deleteRecipesByLabel:
+DELETE FROM RecipeCache WHERE label = ?;

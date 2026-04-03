@@ -1,5 +1,6 @@
 package io.jadu.fresco.data.repository
 
+import io.jadu.fresco.data.local.FoodLocalDataSource
 import io.jadu.fresco.data.network.FoodApiService
 import io.jadu.fresco.domain.food.FoodInfo
 import io.jadu.fresco.domain.food.FoodRepository
@@ -9,12 +10,13 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
 class FoodRepositoryImpl(
-    private val foodApiService: FoodApiService
+    private val foodApiService: FoodApiService,
+    private val localDataSource: FoodLocalDataSource
 ) : FoodRepository {
 
     override suspend fun getFoodDetails(label: String): FoodInfo = coroutineScope {
-        val nutritionDeferred = async { fetchNutrition(label) }
-        val recipesDeferred = async { fetchRecipes(label) }
+        val nutritionDeferred = async { getCachedOrFetchNutrition(label) }
+        val recipesDeferred = async { getCachedOrFetchRecipes(label) }
 
         FoodInfo(
             label = label,
@@ -23,11 +25,13 @@ class FoodRepositoryImpl(
         )
     }
 
-    private suspend fun fetchNutrition(label: String): NutritionInfo? {
+    private suspend fun getCachedOrFetchNutrition(label: String): NutritionInfo? {
+        localDataSource.getNutrition(label)?.let { return it }
+
         val response = foodApiService.searchNutrition(label)
         val product = response.products.firstOrNull() ?: return null
         val n = product.nutriments
-        return NutritionInfo(
+        val nutrition = NutritionInfo(
             productName = product.productName,
             imageUrl = product.imageUrl,
             energyKcal = n.energyKcal,
@@ -37,16 +41,20 @@ class FoodRepositoryImpl(
             fiber = n.fiber,
             sugars = n.sugars
         )
+        localDataSource.saveNutrition(label, nutrition)
+        return nutrition
     }
 
-    private suspend fun fetchRecipes(label: String): List<Recipe> {
+    private suspend fun getCachedOrFetchRecipes(label: String): List<Recipe> {
+        localDataSource.getRecipes(label)?.let { return it }
+
         val response = foodApiService.searchRecipes(label)
-        return response.meals?.map { meal ->
-            Recipe(
-                id = meal.id,
-                name = meal.name,
-                thumbnailUrl = meal.thumbnailUrl
-            )
+        val recipes = response.meals?.map { meal ->
+            Recipe(id = meal.id, name = meal.name, thumbnailUrl = meal.thumbnailUrl)
         } ?: emptyList()
+        if (recipes.isNotEmpty()) {
+            localDataSource.saveRecipes(label, recipes)
+        }
+        return recipes
     }
 }
