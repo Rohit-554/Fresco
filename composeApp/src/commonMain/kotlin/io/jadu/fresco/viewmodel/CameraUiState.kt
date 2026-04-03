@@ -1,6 +1,7 @@
 package io.jadu.fresco.viewmodel
 
 import io.jadu.fresco.domain.classification.ClassificationResult
+import io.jadu.fresco.domain.food.FoodInfo
 import io.jadu.fresco.platform.camera.CameraImage
 
 sealed interface CameraUiState {
@@ -10,9 +11,11 @@ sealed interface CameraUiState {
     data object Preview : CameraUiState
     data object Processing : CameraUiState
     data object Classifying : CameraUiState
+    data object Enriching : CameraUiState
     data class Classified(
         val image: CameraImage,
-        val results: List<ClassificationResult>
+        val results: List<ClassificationResult>,
+        val foodInfo: FoodInfo? = null
     ) : CameraUiState
     data class Error(val message: String) : CameraUiState
 }

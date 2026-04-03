@@ -60,6 +60,8 @@ fun CameraScreen(
 
         is CameraUiState.Classifying -> ProcessingPane("Identifying...")
 
+        is CameraUiState.Enriching -> ProcessingPane("Fetching details...")
+
         is CameraUiState.Classified -> ClassifiedPane(
             results = state.results,
             onRetake = viewModel::onRetry

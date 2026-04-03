@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.jadu.fresco.domain.camera.CaptureImageUseCase
 import io.jadu.fresco.domain.classification.InterpretResultUseCase
+import io.jadu.fresco.domain.food.FetchFoodDetailsUseCase
 import io.jadu.fresco.domain.ml.ClassifyImageUseCase
 import io.jadu.fresco.domain.preprocessing.PreprocessImageUseCase
 import io.jadu.fresco.platform.camera.CameraPermission
@@ -18,7 +19,8 @@ class CameraViewModel(
     private val captureImageUseCase: CaptureImageUseCase,
     private val preprocessImageUseCase: PreprocessImageUseCase,
     private val classifyImageUseCase: ClassifyImageUseCase,
-    private val interpretResultUseCase: InterpretResultUseCase
+    private val interpretResultUseCase: InterpretResultUseCase,
+    private val fetchFoodDetailsUseCase: FetchFoodDetailsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CameraUiState>(determineInitialState())
@@ -84,6 +86,15 @@ class CameraViewModel(
 
         // Interpret results: top-K with labels and confidence
         val results = interpretResultUseCase(output)
-        _uiState.value = CameraUiState.Classified(image, results)
+
+        // Enrich top result with nutrition + recipe data from APIs
+        val topLabel = results.firstOrNull()?.label
+        if (topLabel != null) {
+            _uiState.value = CameraUiState.Enriching
+            val foodInfo = runCatching { fetchFoodDetailsUseCase(topLabel) }.getOrNull()
+            _uiState.value = CameraUiState.Classified(image, results, foodInfo)
+        } else {
+            _uiState.value = CameraUiState.Classified(image, results)
+        }
     }
 }
