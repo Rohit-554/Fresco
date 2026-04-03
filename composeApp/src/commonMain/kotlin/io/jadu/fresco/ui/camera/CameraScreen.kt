@@ -52,10 +52,13 @@ fun CameraScreen(
             onCapture = viewModel::onCaptureRequested
         )
 
-        is CameraUiState.Processing -> ProcessingPane()
+        is CameraUiState.Processing -> ProcessingPane("Processing image...")
 
-        is CameraUiState.Captured -> CapturedPane(
-            tensorShape = state.tensor.shape,
+        is CameraUiState.Classifying -> ProcessingPane("Identifying...")
+
+        is CameraUiState.Classified -> ClassifiedPane(
+            classIndex = state.output.predictedClassIndex,
+            confidence = state.output.confidence,
             onRetake = viewModel::onRetry
         )
 
@@ -106,7 +109,7 @@ private fun PreviewPane(onCapture: () -> Unit) {
 }
 
 @Composable
-private fun ProcessingPane() {
+private fun ProcessingPane(message: String) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
@@ -114,29 +117,35 @@ private fun ProcessingPane() {
     ) {
         CircularProgressIndicator()
         Spacer(Modifier.height(16.dp))
-        Text("Processing image...", style = MaterialTheme.typography.bodyLarge)
+        Text(message, style = MaterialTheme.typography.bodyLarge)
     }
 }
 
 @Composable
-private fun CapturedPane(tensorShape: IntArray, onRetake: () -> Unit) {
+private fun ClassifiedPane(classIndex: Int, confidence: Float, onRetake: () -> Unit) {
+    val confidencePercent = (confidence * 100).toInt()
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Image Preprocessed",
+            text = "Classification Result",
             style = MaterialTheme.typography.headlineSmall
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         Text(
-            text = "Tensor: ${tensorShape.joinToString("×")}",
-            style = MaterialTheme.typography.bodyMedium
+            text = "Class #$classIndex",
+            style = MaterialTheme.typography.titleLarge
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Ready for classification (Phase 4)",
+            text = "Confidence: $confidencePercent%",
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Label mapping in Phase 5",
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center
         )

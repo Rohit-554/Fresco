@@ -3,6 +3,7 @@ package io.jadu.fresco.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.jadu.fresco.domain.camera.CaptureImageUseCase
+import io.jadu.fresco.domain.ml.ClassifyImageUseCase
 import io.jadu.fresco.domain.preprocessing.PreprocessImageUseCase
 import io.jadu.fresco.platform.camera.CameraPermission
 import io.jadu.fresco.platform.camera.PermissionStatus
@@ -14,7 +15,8 @@ import kotlinx.coroutines.launch
 class CameraViewModel(
     private val cameraPermission: CameraPermission,
     private val captureImageUseCase: CaptureImageUseCase,
-    private val preprocessImageUseCase: PreprocessImageUseCase
+    private val preprocessImageUseCase: PreprocessImageUseCase,
+    private val classifyImageUseCase: ClassifyImageUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<CameraUiState>(determineInitialState())
@@ -51,7 +53,7 @@ class CameraViewModel(
     }
 
     fun onRetry() {
-        _uiState.value = CameraUiState.PermissionPrimer
+        _uiState.value = CameraUiState.Preview
     }
 
     private suspend fun captureImage() {
@@ -61,12 +63,21 @@ class CameraViewModel(
                 _uiState.value = CameraUiState.Error(it.message ?: "Capture failed")
                 return
             }
+
         // Now safe to leave Preview — camera can be released
         _uiState.value = CameraUiState.Processing
-        _uiState.value = runCatching { preprocessImageUseCase(image) }
+        val tensor = runCatching { preprocessImageUseCase(image) }
+            .getOrElse {
+                _uiState.value = CameraUiState.Error(it.message ?: "Processing failed")
+                return
+            }
+
+        // Run ML inference
+        _uiState.value = CameraUiState.Classifying
+        _uiState.value = runCatching { classifyImageUseCase(tensor) }
             .fold(
-                onSuccess = { tensor -> CameraUiState.Captured(image, tensor) },
-                onFailure = { CameraUiState.Error(it.message ?: "Processing failed") }
+                onSuccess = { output -> CameraUiState.Classified(image, output) },
+                onFailure = { CameraUiState.Error(it.message ?: "Classification failed") }
             )
     }
 }

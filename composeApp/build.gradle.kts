@@ -24,6 +24,15 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
+            linkerOpts("-framework", "CoreML")
+        }
+        iosTarget.compilations.getByName("main") {
+            cinterops {
+                val coremlhelper by creating {
+                    defFile(project.file("src/nativeInterop/cinterop/coremlhelper.def"))
+                    includeDirs(project.file("src/nativeInterop/cinterop/coremlhelper"))
+                }
+            }
         }
     }
 

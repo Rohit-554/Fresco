@@ -1,0 +1,6 @@
+language = Objective-C
+headers = CoreMLHelper.h
+headerFilter = CoreMLHelper.h
+
+compilerOpts = -framework CoreML -framework Foundation
+linkerOpts = -framework CoreML -framework Foundation
