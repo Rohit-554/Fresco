@@ -1,54 +1,79 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Server.
+# Fresco
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-    folder is the appropriate location.
+> Fruit & vegetable classifier for Android and iOS, built with Kotlin Multiplatform.
 
-* [/iosApp](./iosApp/iosApp) contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
-
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
-
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
-
-### Build and Run Android Application
-
-To build and run the development version of the Android app, use the run configuration from the run widget
-in your IDE’s toolbar or build it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:assembleDebug
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:assembleDebug
-  ```
-
-### Build and Run Server
-
-To build and run the development version of the server, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
-- on macOS/Linux
-  ```shell
-  ./gradlew :server:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :server:run
-  ```
-
-### Build and Run iOS Application
-
-To build and run the development version of the iOS app, use the run configuration from the run widget
-in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+![Kotlin](https://img.shields.io/badge/Kotlin-2.3.20-7F52FF?logo=kotlin&logoColor=white)
+![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.10.3-4285F4?logo=jetpackcompose&logoColor=white)
+![ONNX Runtime](https://img.shields.io/badge/ONNX%20Runtime-1.24.3-005CED)
+![Core ML](https://img.shields.io/badge/Core%20ML-iOS%2016%2B-000000?logo=apple&logoColor=white)
+![Ktor](https://img.shields.io/badge/Ktor-3.4.2-087CFA?logo=ktor&logoColor=white)
+![SQLDelight](https://img.shields.io/badge/SQLDelight-2.3.2-F57C00)
+![Android minSdk](https://img.shields.io/badge/minSdk-24-green?logo=android&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+## Overview
+
+Fresco uses **EfficientNet-B0** to classify fruits and vegetables from the camera, then enriches results with nutritional data from [Open Food Facts](https://world.openfoodfacts.org) and recipe suggestions from [TheMealDB](https://www.themealdb.com). Everything is cached locally with SQLDelight.
+
+- Shared UI and business logic via Compose Multiplatform
+- On-device inference — ONNX Runtime on Android, Core ML on iOS
+- Clean Architecture: UI → ViewModel → UseCase → Repository
+- Dependency injection with Koin
+
+---
+
+## Tech Stack
+
+| Layer | Library | Version |
+|---|---|---|
+| Language | Kotlin | 2.3.20 |
+| UI | Compose Multiplatform | 1.10.3 |
+| ML (Android) | ONNX Runtime | 1.24.3 |
+| ML (iOS) | Core ML | native |
+| Camera (Android) | CameraX | 1.6.0 |
+| Camera (iOS) | AVFoundation | native |
+| Networking | Ktor Client | 3.4.2 |
+| Local Storage | SQLDelight | 2.3.2 |
+| DI | Koin | 4.2.0 |
+| Coroutines | kotlinx.coroutines | 1.10.2 |
+| Serialization | kotlinx.serialization | 1.10.0 |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Android Studio Meerkat or later
+- Xcode 15+
+- JDK 11
+
+### Android
+
+```shell
+./gradlew :composeApp:assembleDebug
+```
+
+### iOS
+
+Open `iosApp/iosApp.xcodeproj` in Xcode and run on a simulator or device.
+
+---
+
+## Project Structure
+
+```
+composeApp/src/
+├── commonMain/       # Shared UI, ViewModels, domain, data, DI
+├── androidMain/      # CameraX, ONNX Runtime, Android platform impl
+└── iosMain/          # AVFoundation, Core ML, iOS platform impl
+iosApp/               # Xcode project + EfficientNetB0.mlpackage
+```
+
+---
+
+## License
+
+MIT
